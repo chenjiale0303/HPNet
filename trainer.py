@@ -134,20 +134,21 @@ class Trainer(object):
 
         # Create dataset
         if self.opt.dataset == 'ABC':
-            from dataloader.ABCDataset import ABCDataset
-            Dataset = ABCDataset
+            from dataloader.ABCDataset import ABCDataset, ABCTestDataset
+            # Dataset = ABCDataset
+            Dataset = ABCTestDataset
 
-        train_dataset = Dataset(DATA_PATH,
-                                TRAIN_DATASET,
-                                opt=self.opt,
-                                skip=self.opt.train_skip,
-                                fold=self.opt.train_fold)
+        # train_dataset = Dataset(DATA_PATH,
+        #                         TRAIN_DATASET,
+        #                         opt=self.opt,
+        #                         skip=self.opt.train_skip,
+        #                         fold=self.opt.train_fold)
         test_dataset = Dataset(DATA_PATH, TEST_DATASET, opt=self.opt, skip=self.opt.val_skip)
 
         num_workers = 0 if self.opt.debug else 4
 
-        self.train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=self.opt.batch_size, \
-                shuffle=True, num_workers=num_workers, worker_init_fn=my_worker_init_fn)
+        # self.train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=self.opt.batch_size, \
+        #         shuffle=True, num_workers=num_workers, worker_init_fn=my_worker_init_fn)
 
         self.test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, \
                 shuffle=False, num_workers=num_workers, worker_init_fn=my_worker_init_fn)
@@ -229,7 +230,7 @@ class Trainer(object):
             for key in batch_data_label:
                 if not isinstance(batch_data_label[key], list):
                     batch_data_label[key] = batch_data_label[key].cuda()
-
+        
             with torch.no_grad():
                 total_loss, loss_dict = self.process_batch(batch_data_label,
                                                            postprocess=True)
@@ -254,6 +255,27 @@ class Trainer(object):
         
         miou = stat_dict['miou'] / (float(batch_idx + 1))
         return miou
+    
+    def test_one_epoch_xyzc(self):
+
+        stat_dict = {}
+        self.model.eval()
+
+        for batch_idx, batch_data_label in enumerate(self.test_dataloader):
+            if batch_idx % 200 == 0:
+                print('Eval batch: %d' % (batch_idx))
+
+            for key in batch_data_label:
+                if not isinstance(batch_data_label[key], list):
+                    batch_data_label[key] = batch_data_label[key].cuda()
+        
+            with torch.no_grad():
+                cluster_pred = self.process_batch_xyzc(batch_data_label,
+                                                           postprocess=True)
+                
+            with open("out/{:08d}.xyzc".format(batch_data_label["index"].item()), "w") as f:
+                for i in range(cluster_pred.shape[1]):
+                    f.write(" ".join(map(str, cluster_pred[:,i])) + "\n")
 
     def train(self):
         
@@ -286,8 +308,7 @@ class Trainer(object):
                 if miou >= max_miou:
                     max_miou = miou
                     try:  # with nn.DataParallel() the net is added as a submodule of DataParallel
-                        save_dict[
-                            'model_state_dict'] = self.model.module.state_dict()
+                        save_dict['model_state_dict'] = self.model.module.state_dict()
                     except:
                         save_dict['model_state_dict'] = self.model.state_dict()
                     torch.save(save_dict,
@@ -303,10 +324,4 @@ class Trainer(object):
                     torch.save(
                         save_dict,
                         os.path.join(self.LOG_DIR,
-                                     'checkpoint_eval%d.tar' % epoch))
-
-
-if __name__ == '__main__':
-    FLAGS = build_option()
-    trainer = Trainer(FLAGS)
-    trainer.train()
+                                    'checkpoint_eval%d.tar' % epoch))

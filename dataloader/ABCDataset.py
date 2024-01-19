@@ -10,7 +10,7 @@ import random
 from collections import Counter
 from src.augment_utils import rotate_perturbation_point_cloud, jitter_point_cloud, \
     shift_point_cloud, random_scale_point_cloud, rotate_point_cloud
-
+import open3d as o3d
 EPS = np.finfo(np.float32).eps
 
 class ABCDataset(data.Dataset):
@@ -91,6 +91,43 @@ class ABCDataset(data.Dataset):
 
     def __len__(self):
         return self.len
+
+
+class ABCTestDataset(data.Dataset):
+    def __init__(self, root, filename, opt, skip=1, fold=1):
+        
+        self.root = root
+        self.opt = opt
+        
+        self.augment = 0
+        self.if_normal_noise = 0
+       
+        self.data_list = os.listdir(self.root)
+        self.skip = skip
+        
+        self.tru_len = len(self.data_list)
+        self.len = self.tru_len * fold
+    
+    def __getitem__(self, index):
+
+        ret_dict = {}
+        index = index % self.tru_len
+        
+        pcd = o3d.io.read_point_cloud(os.path.join(self.root, self.data_list[index]))
+        points = np.asarray(pcd.points)
+        std = np.max(points, 0) - np.min(points, 0)
+        points = points / np.max(std)
+        normals = np.asarray(pcd.normals)
+
+        ret_dict['gt_pc'] = points
+        ret_dict['gt_normal'] = normals
+        ret_dict['index'] = int(self.data_list[index][:-4])
+        
+        return ret_dict
+
+    def __len__(self):
+        return self.len
+
 
 if __name__ == '__main__':
 
