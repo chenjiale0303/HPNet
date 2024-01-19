@@ -122,6 +122,7 @@ class ABCTestDataset(data.Dataset):
         ret_dict['gt_pc'] = points
         ret_dict['gt_normal'] = normals
         ret_dict['index'] = int(self.data_list[index][:-4])
+        ret_dict['scale'] = np.max(std)
         
         return ret_dict
 

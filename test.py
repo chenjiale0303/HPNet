@@ -108,6 +108,7 @@ class MyTrainer(Trainer):
             # loss_dict['type_miou'] = miou
 
         xyz = inputs_xyz_th[:,:,sub_idx[0]]
+        xyz = xyz * batch_data_label['scale']
         xyzc = torch.cat([xyz, cluster_pred.unsqueeze(0).float()], dim=1)[0].cpu().numpy()
         return xyzc
         
