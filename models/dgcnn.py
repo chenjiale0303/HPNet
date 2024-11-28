@@ -279,7 +279,6 @@ class PrimitivesEmbeddingDGCNGn(nn.Module):
  
 
     def forward(self, points, normals, end_points=None, inds=None, postprocess=False):
-        
         batch_size, N, _ = points.shape
         l = np.arange(N)
         if postprocess:
@@ -364,7 +363,6 @@ class PrimitiveNet(nn.Module):
                                                     )
     
     def forward(self, xyz, normal, inds=None, postprocess=False):
-
         feat_spec_embedding, T_pred, normal_per_point, T_param_pred, subidx = self.affinitynet(
                 xyz.transpose(1, 2).contiguous(),
                 normal.transpose(1, 2).contiguous(),
