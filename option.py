@@ -11,7 +11,7 @@ parser.add_argument('--train_dataset',
                     help='file name for the list of object names for training')
 parser.add_argument('--test_dataset',
                     type=str,
-                    default='test_data.txt',
+                    default='test_ids.txt',
                     help='file name for the list of object names for testing')
 parser.add_argument('--checkpoint_path',
                     default=None,

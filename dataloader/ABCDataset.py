@@ -114,15 +114,18 @@ class ABCTestDataset(data.Dataset):
         index = index % self.tru_len
         
         pcd = o3d.io.read_point_cloud(os.path.join(self.root, self.data_list[index]))
+        
         points = np.asarray(pcd.points)
+        center = points.mean(axis=0)
         std = np.max(points, 0) - np.min(points, 0)
-        points = points / np.max(std)
+        points = (points-center[None]) / np.max(std)
         normals = np.asarray(pcd.normals)
 
         ret_dict['gt_pc'] = points
         ret_dict['gt_normal'] = normals
         ret_dict['index'] = int(self.data_list[index][:-4])
         ret_dict['scale'] = np.max(std)
+        ret_dict['center'] = center
         
         return ret_dict
 
